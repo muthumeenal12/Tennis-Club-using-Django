@@ -184,4 +184,186 @@ Version/Environment
 - Pillow installed
 - requests installed
 
-End of Document
+Open a Django shell from your project root to interact with models directly. On Windows PowerShell:
+ 
+python manage.py shell
+ 
+Then run these in the Python shell.
+ 
+Import models:
+ 
+from members.models import Member, JoinRequest
+ 
+List all records:
+ 
+Member.objects.all()
+JoinRequest.objects.all()
+ 
+Pretty-print fields for each member:
+ 
+for m in Member.objects.all():
+	print(m.id, m.firstname, m.lastname, m.email, m.phone, m.join_date, m.age, bool(m.photo))
+ 
+Filter, order, and count:
+ 
+Member.objects.filter(age__gte=18)
+Member.objects.order_by('-join_date')[:5]
+Member.objects.count()
+ 
+Get one object (raises if not found) vs safe get:
+ 
+Member.objects.get(id=1)
+Member.objects.filter(email='john.doe@example.com').first()
+ 
+Create new records:
+ 
+Member.objects.create(firstname='John', lastname='Doe', email='john@example.com', phone='1234567890', age=25)
+JoinRequest.objects.create(firstname='Jane', lastname='Smith', email='jane@example.com', phone='9876543210', message='Excited to join!')
+ 
+Update a record:
+ 
+m = Member.objects.get(id=1)
+m.phone = '1112223333'
+m.save()
+ 
+Delete (careful!):
+ 
+Member.objects.filter(email='john@example.com').delete()
+ 
+Raw SQL (rarely needed):
+ 
+from django.db import connection
+with connection.cursor() as cursor:
+	cursor.execute("SELECT COUNT(*) FROM members_member")
+	print(cursor.fetchone())
+ 
+Exit the shell:
+ 
+exit()
+ 
+View Model Structure (Fields and SQL)
+Sometimes you want to see what fields a model has and what SQL Django will generate. Here are practical ways:
+ 
+1) Introspect fields via Django _meta (recommended)
+ 
+python manage.py shell
+ 
+from members.models import Member, JoinRequest
+ 
+# List field names and types
+for f in Member._meta.get_fields():
+	print(f"{f.name}: {f.__class__.__name__}")
+ 
+# Detailed attributes for concrete (DB) fields
+for f in Member._meta.get_fields():
+	if hasattr(f, 'attname'):
+		print({
+			'name': f.name,
+			'attname': getattr(f, 'attname', None),
+			'type': f.get_internal_type() if hasattr(f, 'get_internal_type') else type(f).__name__,
+			'null': getattr(f, 'null', None),
+			'blank': getattr(f, 'blank', None),
+			'max_length': getattr(f, 'max_length', None),
+			'choices': getattr(f, 'choices', None),
+			'primary_key': getattr(f, 'primary_key', None),
+			'unique': getattr(f, 'unique', None),
+			'db_column': getattr(f, 'db_column', None),
+			'related_model': getattr(f, 'related_model', None),
+		})
+ 
+# Print the database table name and app label
+print(Member._meta.app_label, Member._meta.model_name, Member._meta.db_table)
+ 
+2) See SQL for a migration (the actual CREATE/ALTER)
+From the project root in PowerShell:
+ 
+python manage.py makemigrations ; python manage.py showmigrations members ; python manage.py sqlmigrate members 0001
+ 
+Replace `0001` with the migration you want to inspect (e.g., the latest shown by `showmigrations`). This prints the SQL Django would run for that migration.
+Tip: You already ran `python manage.py sqlmigrate members 0005` to preview later migrations.
+ 
+3) Inspect the live SQLite schema
+Open the DB shell (SQLite in development):
+ 
+python manage.py dbshell
+ 
+Then run SQLite commands:
+ 
+.tables
+.schema members_member
+.schema members_joinrequest
+ 
+Or query PRAGMA for table info:
+ 
+PRAGMA table_info('members_member');
+PRAGMA table_info('members_joinrequest');
+ 
+Exit sqlite:
+ 
+.quit
+ 
+4) Snapshot field names quickly
+Show model field names via Python (handy for quick checks):
+ 
+python manage.py shell
+ 
+from members.models import Member
+print([f.name for f in Member._meta.fields])
+ 
+Note: For the canonical definition, open `members/models.py`.
+Open a Django shell from your project root to interact with models directly. On Windows PowerShell:
+
+python manage.py shell
+
+Then run these in the Python shell.
+
+Import models:
+
+from members.models import Member, JoinRequest
+
+List all records:
+
+Member.objects.all()
+JoinRequest.objects.all()
+
+Pretty-print fields for each member:
+
+for m in Member.objects.all():
+	print(m.id, m.firstname, m.lastname, m.email, m.phone, m.join_date, m.age, bool(m.photo))
+
+Filter, order, and count:
+
+Member.objects.filter(age__gte=18)
+Member.objects.order_by('-join_date')[:5]
+Member.objects.count()
+
+Get one object (raises if not found) vs safe get:
+
+Member.objects.get(id=1)
+Member.objects.filter(email='john.doe@example.com').first()
+
+Create new records:
+
+Member.objects.create(firstname='John', lastname='Doe', email='john@example.com', phone='1234567890', age=25)
+JoinRequest.objects.create(firstname='Jane', lastname='Smith', email='jane@example.com', phone='9876543210', message='Excited to join!')
+
+Update a record:
+
+m = Member.objects.get(id=1)
+m.phone = '1112223333'
+m.save()
+
+Delete (careful!):
+
+Member.objects.filter(email='john@example.com').delete()
+
+Raw SQL (rarely needed):
+
+from django.db import connection
+with connection.cursor() as cursor:
+	cursor.execute("SELECT COUNT(*) FROM members_member")
+	print(cursor.fetchone())
+
+Exit the shell:
+
+exit()
