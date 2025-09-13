@@ -11,7 +11,7 @@ This page shows screenshots of the app so you (or visitors) can preview it witho
 
 - Home (logged out)
 
-  ![Home](images/home.png)
+  ![Home](images/homeBeforeSignUp.png)
 
 - Contact
 
@@ -23,7 +23,7 @@ This page shows screenshots of the app so you (or visitors) can preview it witho
 
 - Home (logged in)
 
-  ![Home logged in](images/home-logged-in.png)
+  ![Home logged in](images/homeAfterLogin.png)
 
 - Members
 
@@ -36,3 +36,11 @@ This page shows screenshots of the app so you (or visitors) can preview it witho
 - Django Admin
 
   ![Admin](images/admin.png)
+
+- Login Page
+  
+  ![Login](images/login.png)
+
+- Sign Up Page
+  
+  ![Sign Up](images/signUp.png)
