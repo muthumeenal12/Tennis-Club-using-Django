@@ -1,0 +1,55 @@
+<!-- navbar.html -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="{% url 'home' %}">
+      🎾 Tennis Club
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" 
+            data-bs-target="#navbarNav" aria-controls="navbarNav" 
+            aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto align-items-lg-center">
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">
+            Home
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}" href="{% url 'contact' %}">
+            Contact
+          </a>
+        </li>
+
+        {% if request.user.is_authenticated %}
+          <li class="nav-item me-2 text-white-50 d-none d-lg-block">
+            Hi, {{ request.user.username }}
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'members' %}active{% endif %}" href="{% url 'members' %}">
+              Members
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'join' %}active{% endif %}" href="{% url 'join' %}">
+              Join
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+          </li>
+        {% else %}
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}" href="{% url 'login' %}">Login</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'signup' %}active{% endif %}" href="{% url 'signup' %}">Signup</a>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

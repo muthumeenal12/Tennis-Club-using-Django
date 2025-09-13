@@ -1,0 +1,187 @@
+Tennis Members Club - Project Documentation
+
+Overview
+This Django web app manages a small tennis club site with:
+- A public home page with a quote and CTAs
+- A members listing page with flip cards and photos (protected)
+- A join form (protected) that stores requests
+- Contact page (public)
+- User authentication: signup, login, logout
+- Media handling for member photos
+
+Tech Stack and Packages
+- Python 3.x
+- Django 5.2
+- Pillow (PIL) for ImageField support
+- Bootstrap 5 (CDN) for UI styling
+- requests (optional) to fetch a quote on the home page
+
+Project Structure (key files)
+my_tennis_club/
+├─ manage.py
+├─ db.sqlite3
+├─ my_tennis_club/
+│  ├─ settings.py              → Django settings, media and auth redirects
+│  ├─ urls.py                  → Routes root URL patterns and media in DEBUG
+│  ├─ wsgi.py / asgi.py
+├─ members/
+│  ├─ models.py                → Member, JoinRequest models
+│  ├─ forms.py                 → JoinRequestForm validation
+│  ├─ views.py                 → home, members, join, join_thanks, contact, signup, logout_view
+│  ├─ urls.py                  → App URL patterns (members, join, auth)
+│  ├─ templates/
+│  │  ├─ home.html             → Landing page with navbar include
+│  │  ├─ myFirstPage.html      → Members flip-card grid (protected)
+│  │  ├─ join.html             → Join form (protected)
+│  │  ├─ join_thanks.html      → Thank-you page
+│  │  ├─ contact.html          → Contact info
+│  │  ├─ login.html            → Login page (Django LoginView)
+│  │  ├─ signup.html           → Signup page (UserCreationForm)
+│  │  ├─ navbar.html           → Shared navbar (dark theme, auth-aware)
+│  │  └─ description.doc       → This documentation
+│  └─ migrations/              → Database migrations
+
+Initial Setup
+1) Create project and app
+- django-admin startproject my_tennis_club
+- cd my_tennis_club
+- python manage.py startapp members
+- Add 'members' to INSTALLED_APPS in settings.py
+
+2) Install packages
+- pip install django pillow requests
+
+3) Database and media
+- Run: python manage.py makemigrations; python manage.py migrate
+- In settings.py:
+	MEDIA_URL = '/media/'
+	MEDIA_ROOT = BASE_DIR / 'media'
+
+4) Static/UI
+- We use Bootstrap 5 via CDN in templates.
+
+Settings Highlights (my_tennis_club/settings.py)
+- DEBUG = True (for development)
+- ALLOWED_HOSTS = ['*'] (development convenience)
+- Media:
+	MEDIA_URL = '/media/'
+	MEDIA_ROOT = BASE_DIR / 'media'
+- Auth redirects:
+	LOGIN_URL = 'login'
+	LOGIN_REDIRECT_URL = 'home'
+	LOGOUT_REDIRECT_URL = 'home'
+
+URLs and Routing
+- Root urls (my_tennis_club/urls.py):
+	path('', include('members.urls'))
+	if settings.DEBUG: serve MEDIA_URL
+- App urls (members/urls.py):
+	path('', views.home, name='home')
+	path('members/', views.members, name='members')
+	path('join/', views.join, name='join')
+	path('join/thanks/', views.join_thanks, name='join_thanks')
+	path('contact/', views.contact, name='contact')
+	path('signup/', views.signup, name='signup')
+	path('login/', LoginView.as_view(template_name='login.html', redirect_authenticated_user=True), name='login')
+	path('logout/', views.logout_view, name='logout')
+
+Models (members/models.py)
+- Member
+	firstname: CharField(255)
+	lastname: CharField(255)
+	email: EmailField
+	phone: CharField(20)
+	join_date: DateField(auto_now_add=True)
+	age: IntegerField (currently required)
+	photo: ImageField(upload_to='member_photos/', blank=True, null=True)
+
+- JoinRequest
+	firstname, lastname, email
+	phone: CharField(20, blank=True)
+	message: TextField(blank=True, default='I want to join the club.')
+	created_at: DateTimeField(auto_now_add=True)
+
+Forms (members/forms.py)
+- JoinRequestForm: ModelForm for JoinRequest with validation:
+	clean_email: simple '@' check
+	clean_phone: requires digits and length >= 10 (you can relax this or allow +country codes)
+	clean_firstname/lastname: min length 2
+
+Views (members/views.py)
+- home(request):
+	Fetches a quote from zenquotes (via requests); falls back to a local quote on errors. Renders home.html.
+- members(request): [login_required]
+	Lists all Member objects. Renders myFirstPage.html (flip-card UI with photo and details).
+- join(request): [login_required]
+	GET: renders join.html with JoinRequestForm
+	POST: validates and saves, redirects to join_thanks
+- join_thanks(request): Renders a simple thanks page.
+- contact(request): Renders contact info.
+- signup(request):
+	Uses Django’s UserCreationForm. On success, sets a message and redirects to 'login'.
+- logout_view(request):
+	Accepts GET/POST, logs out if authenticated, sets a success message, redirects to 'home'.
+
+Templates and UI
+- navbar.html: Shared dark navbar with auth-aware links. Shows Login/Signup when logged out; Members/Join/Logout (and a greeting) when logged in. Included at the top of pages.
+- home.html: Hero section, quote block, CTA buttons. Includes navbar and a messages area.
+- myFirstPage.html: Members grid with hover flip effect (front: photo + name, back: details). Responsive, with placeholders if no photo.
+- join.html: Clean form layout with labels and error display.
+- login.html: Styled auth page with messages and “Please log in to continue” notice when redirected from protected pages.
+- signup.html: Clean white card style with green accents; shows messages; consistent input and button styling.
+- join_thanks.html & contact.html: Simple informational pages with navbar.
+
+Auth Flow
+1) Unauthenticated user visits /members or /join
+	 - Redirected to /login/?next=/members (or /join)
+	 - Login page shows a warning “Please log in to continue.”
+2) After login
+	 - Redirected back to the originally requested page (via 'next')
+3) Logout
+	 - /logout/ logs out via logout_view and redirects to Home with a success message
+4) Signup
+	 - /signup/ creates a new user (UserCreationForm) and redirects to Login
+
+Media Flow (Member Photos)
+- Model uses ImageField → requires Pillow installed
+- Uploads go to MEDIA_ROOT/member_photos/
+- During development (DEBUG=True), Django serves MEDIA_URL paths via the static() helper in urls.py
+- Templates prefer member.photo if present; otherwise can show a fallback avatar
+
+How Pages Connect (Request Flow Examples)
+- Home → View Members
+	GET / → home() → home.html
+	Click “View Members” → GET /members/ → login_required → if not authenticated redirect to /login/?next=/members/
+	After login → redirected to /members/ → members() → myFirstPage.html
+
+- Join flow
+	GET /join/ (if authenticated) → join() → join.html (form)
+	POST /join/ (valid) → form.save() → redirect /join/thanks/ → join_thanks.html
+
+Developer Commands (Windows PowerShell)
+- Create migrations: python manage.py makemigrations
+- Apply migrations: python manage.py migrate
+- Run server: python manage.py runserver
+- Create superuser: python manage.py createsuperuser
+- Install deps: pip install django pillow requests
+
+Troubleshooting Notes
+- 405 on /logout/: Use custom logout_view allowing GET (implemented) or switch to POST form for stricter security.
+- Media not showing: Ensure DEBUG=True in development and MEDIA settings are set; verify <img src> points under /media/.
+- TemplateSyntaxError (unclosed tags): Ensure {% for %} and {% if %} blocks are closed with {% endfor %}/{% endif %}.
+- Form validation: clean_email must return the email; phone validation may be relaxed if international formats are needed.
+
+Possible Enhancements
+- Member detail pages with slugs
+- Search, filter, pagination on members
+- Email notifications on new JoinRequest
+- Centralize CSS into static files instead of inline styles
+- Add tests for forms and views
+
+Version/Environment
+- Django 5.2
+- Bootstrap 5 via CDN
+- Pillow installed
+- requests installed
+
+End of Document
